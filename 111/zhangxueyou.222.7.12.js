@@ -1,8 +1,60 @@
 /*
- * 脚本功能：修改指定链接的响应体中的字段值
- */
+[rewrite_local]
+^https:\/\/h5\.moutai519\.com\.cn\/xhr\/front\/trade\/priority\/rushPurchase url script-request-body https://raw.githubusercontent.com/ciaooo55/maoyanqiangpiao/refs/heads/main/111/zhangxueyou.222.7.12.js
 
+[mitm]
+hostname = h5.moutai519.com.cn
+*/
+// 完全克隆 rushPurchase 请求，重放 10 次，每次间隔 30ms
+// code != 2000 弹窗继续尝试，code == 2000 弹窗成功
+const TIMES = 10;   // 重放次数
+const GAP_MS = 30;  // 间隔毫秒
+const FLAG_HEADER = "X-QX-Replay";
 
-const responseBody = {"code":200,"msg":"","data":[{"showId":1879517,"name":"加载成功","performanceId":323031,"startTimeDateFormatted":"2024-06-15","startTimeWeekFormatted":"周六","startTimeTimeFormatted":"19:00","startTime":1700000000000,"endTime":1718456400000,"onSaleTime":0,"offSaleTime":0,"hasInventory":true,"showStatus":0,"showType":1,"showNote":"","areaUrl":null,"areaSvg":null,"areaSvgUrl":null,"showSeatType":0,"setExplain":"","showOrderLimitVO":{"maxBuyLimitPerOrder":4,"maxBuyLimitPerUser":4,"userAlreadyBuyNum":0,"userRemainBuyNum":4},"unusualStatus":0,"needFaceCheck":false,"seatMode":0,"hasDiscount":false,"minSellPrice":null,"preSelectVO":null,"soldOut":false,"normal":true,"default":false}],"paging":null,"attrMaps":{"serverTime":1715588112318},"success":true};
+(async () => {
+  try {
+    const url = $request.url;
+    const method = $request.method;
+    const headers = $request.headers;
+    const body = $request.body;
 
-$done({body: JSON.stringify(responseBody)});
+    if (headers[FLAG_HEADER]) {
+      return $done({});
+    }
+
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+    for (let i = 0; i < TIMES; i++) {
+      if (i > 0) await sleep(GAP_MS);
+
+      $task.fetch({
+        url,
+        method,
+        headers: { ...headers, [FLAG_HEADER]: "1" },
+        body
+      }).then(resp => {
+        // 日志输出完整响应
+        console.log(`[#${i+1}] Status: ${resp.statusCode}`);
+        console.log(`[#${i+1}] Body: ${resp.body}`);
+
+        try {
+          const json = JSON.parse(resp.body);
+          if (json.code === 2000) {
+            $notify("rushPurchase", `第${i+1}次`, "成功");
+          } else {
+            $notify("rushPurchase", `第${i+1}次`, "继续尝试");
+          }
+        } catch {
+          $notify("rushPurchase", `第${i+1}次`, "响应非 JSON");
+        }
+      }).catch(err => {
+        console.log(`[rush_clone] Error #${i+1}:`, err);
+      });
+    }
+
+    $done({});
+  } catch (e) {
+    console.log("[rush_clone] Fatal error:", e);
+    $done({});
+  }
+})();
