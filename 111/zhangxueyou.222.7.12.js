@@ -7,12 +7,12 @@ hostname = h5.moutai519.com.cn
 */
 
 const TOTAL_TIMES   = 5000;  // 总请求次数（可改）
-const CONCURRENCY   = 20;    // 并发数（可改）
+const CONCURRENCY   = 100;    // 并发数（可改）
 const GAP_MS        = 10;    // 单个请求发起前的可选延迟（毫秒，节流用，可改；为 0 表示不延迟）
 
 // === 你的需求 ===
-const NOTIFY_EVERY  = 50;    // 每 50 次完成弹一次窗
-const LOG_EVERY     = 20;    // 每 20 次打印一次日志，且打印完整响应体
+const NOTIFY_EVERY  = 100;    // 每 50 次完成弹一次窗
+const LOG_EVERY     = 50;    // 每 20 次打印一次日志，且打印完整响应体
 const SUCCESS_POPUPS= 10;    // 成功时连续弹窗次数
 // =================
 
