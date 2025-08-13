@@ -7,9 +7,15 @@ hostname = h5.moutai519.com.cn
 */
 
 const TOTAL_TIMES   = 5000;  // 总请求次数（可改）
-const CONCURRENCY   = 50;    // 并发数（可改）
+const CONCURRENCY   = 20;    // 并发数（可改）
 const GAP_MS        = 10;    // 单个请求发起前的可选延迟（毫秒，节流用，可改；为 0 表示不延迟）
-const NOTIFY_EVERY  = 20;    // 每 N 次弹一次窗（可改）
+
+// === 你的需求 ===
+const NOTIFY_EVERY  = 50;    // 每 50 次完成弹一次窗
+const LOG_EVERY     = 20;    // 每 20 次打印一次日志，且打印完整响应体
+const SUCCESS_POPUPS= 10;    // 成功时连续弹窗次数
+// =================
+
 const FLAG_HEADER   = "X-QX-Replay";
 
 (async () => {
@@ -43,6 +49,8 @@ const FLAG_HEADER   = "X-QX-Replay";
     // 单次请求执行
     const doOne = async (i) => {
       if (GAP_MS > 0) await sleep(GAP_MS);
+      let parsed = null;
+      let rawBody = "";
       try {
         const resp = await $task.fetch({
           url,
@@ -51,23 +59,33 @@ const FLAG_HEADER   = "X-QX-Replay";
           body
         });
         const sc = resp.statusCode;
-        const bd = resp.body;
-
-        console.log(`[#${i}] Status: ${sc}`);
-        // 只在需要时再打印 body，避免日志过大
-        // 如需强制打印，取消下一行注释：
-        // console.log(`[#${i}] Body: ${bd}`);
-
+        rawBody = typeof resp.body === "string" ? resp.body : (resp.body || "");
         let ok = false;
+
         try {
-          const json = JSON.parse(bd);
-          if (json && json.code === 2000) {
-            ok = true;
-          }
+          parsed = JSON.parse(rawBody);
+          if (parsed && parsed.code === 2000) ok = true;
         } catch {
           nonJson += 1;
         }
-        if (ok) success += 1;
+
+        // 日志节流：仅每 LOG_EVERY 次打印一次，且打印完整响应体
+        if (i % LOG_EVERY === 0) {
+          console.log(`[#${i}] Status: ${sc}`);
+          console.log(`[#${i}] Body: ${rawBody}`);
+        }
+
+        if (ok) {
+          success += 1;
+          // 抢购成功连续弹窗 N 次
+          for (let k = 1; k <= SUCCESS_POPUPS; k++) {
+            $notify(
+              "rushPurchase",
+              `成功(${success}) #${i} 第${k}/${SUCCESS_POPUPS}次`,
+              rawBody && rawBody.length <= 500 ? rawBody : "code=2000"
+            );
+          }
+        }
       } catch (e) {
         errors += 1;
         console.log(`[rush_concurrent] Error #${i}: ${String(e)}`);
