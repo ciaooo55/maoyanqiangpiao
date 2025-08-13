@@ -1,6 +1,6 @@
 /*
 [rewrite_local]
-^https:\/\/h5\.moutai519\.com\.cn\/xhr\/front\/trade\/priority\/rushPurchase url script-request-body zhangxueyou.concurrent.js
+^https:\/\/h5\.moutai519\.com\.cn\/xhr\/front\/trade\/priority\/rushPurchase url script-request-body https://raw.githubusercontent.com/ciaooo55/maoyanqiangpiao/refs/heads/main/111/zhangxueyou.222.7.12.js
 
 [mitm]
 hostname = h5.moutai519.com.cn
