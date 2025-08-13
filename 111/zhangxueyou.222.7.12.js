@@ -5,7 +5,7 @@
 [mitm]
 hostname = h5.moutai519.com.cn
 */
-const TIMES = 20;
+const TIMES = 5000;
 const GAP_MS = 10;
 const FLAG_HEADER = "X-QX-Replay";
 
